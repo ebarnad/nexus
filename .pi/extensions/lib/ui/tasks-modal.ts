@@ -1,7 +1,7 @@
 import type { Theme } from "@mariozechner/pi-coding-agent";
 import type { Component, TUI } from "@mariozechner/pi-tui";
 import { Key, matchesKey, visibleWidth, truncateToWidth, wrapTextWithAnsi } from "@mariozechner/pi-tui";
-import { previewTaskDoneState, type TaskBoard, type TaskItem } from "../tasks";
+import { previewTaskDoneState, type TaskBoard, type TaskCategory, type TaskItem } from "../tasks";
 
 export class TasksModalComponent implements Component {
   private selected = 0;

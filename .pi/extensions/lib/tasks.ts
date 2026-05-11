@@ -95,6 +95,41 @@ function buildTaskLine(body: string, done: boolean, indent = ""): string {
   return `${indent}- [x] ~~${body}~~ (${today})`;
 }
 
+function getTaskLineState(line: string): { indent: string; done: boolean } | undefined {
+  const match = line.match(/^(\s*)- \[([ xX])\]\s+/);
+  if (!match) return undefined;
+  return { indent: match[1] ?? "", done: String(match[2]).toLowerCase() === "x" };
+}
+
+function findMainTaskIndex(lines: string[], lineIndex: number): number | undefined {
+  const task = getTaskLineState(lines[lineIndex] ?? "");
+  if (!task || task.indent.length === 0) return undefined;
+
+  for (let i = lineIndex - 1; i >= 0; i--) {
+    const line = lines[i] ?? "";
+    if (/^##\s+/.test(line)) break;
+
+    const candidate = getTaskLineState(line);
+    if (candidate && candidate.indent.length === 0) return i;
+  }
+
+  return undefined;
+}
+
+function shouldKeepSubtaskInCurrentSection(lines: string[], lineIndex: number, changes: Map<number, boolean>): boolean {
+  const task = getTaskLineState(lines[lineIndex] ?? "");
+  if (!task || task.indent.length === 0) return false;
+
+  const mainTaskIndex = findMainTaskIndex(lines, lineIndex);
+  if (mainTaskIndex === undefined) return false;
+
+  const mainTask = getTaskLineState(lines[mainTaskIndex] ?? "");
+  if (!mainTask) return false;
+
+  const mainTaskDone = changes.get(mainTaskIndex) ?? mainTask.done;
+  return !mainTaskDone;
+}
+
 export function previewTaskDoneState(result: TaskBoard, lineIndex: number, done: boolean): TaskBoard {
   const next: TaskBoard = {
     categories: result.categories.map((category) => ({
@@ -114,7 +149,7 @@ export function previewTaskDoneState(result: TaskBoard, lineIndex: number, done:
   if (task.done === done) return result;
 
   task.done = done;
-  task.display = task.display.replace(/^\s*[☑☐]\s+/, `${done ? "☑" : "☐"} `);
+  task.display = task.display.replace(/^(\s*)[☑☐]\s+/, (_match, indent) => `${indent}${done ? "☑" : "☐"} `);
 
   return next;
 }
@@ -133,12 +168,20 @@ export function applyTaskDoneChanges(cwd: string, changes: Map<number, boolean>)
       return move.done !== isDoneLine;
     });
 
+  const inPlaceChanges = moves.filter((move) => shouldKeepSubtaskInCurrentSection(originalLines, move.lineIndex, changes));
+  const relocations = moves.filter((move) => !shouldKeepSubtaskInCurrentSection(originalLines, move.lineIndex, changes));
+
   let lines = [...originalLines];
-  for (const move of [...moves].sort((a, b) => b.lineIndex - a.lineIndex)) {
+  for (const move of inPlaceChanges) {
+    const indent = move.line.match(/^(\s*)/)?.[1] ?? "";
+    lines[move.lineIndex] = buildTaskLine(getTaskBody(move.line), move.done, indent);
+  }
+
+  for (const move of [...relocations].sort((a, b) => b.lineIndex - a.lineIndex)) {
     lines.splice(move.lineIndex, 1);
   }
 
-  for (const move of moves) {
+  for (const move of [...relocations].sort((a, b) => b.lineIndex - a.lineIndex)) {
     const destinationSection = move.done ? "Done" : "Active";
     const headingIndex = findSectionHeadingIndex(lines, destinationSection);
     if (headingIndex < 0) continue;
