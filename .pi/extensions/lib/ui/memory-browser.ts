@@ -113,12 +113,12 @@ export class MemoryBrowserComponent implements Component {
         return;
       }
       if (matchesKey(data, Key.pageUp)) {
-        this.scroll = Math.max(0, this.scroll - 10);
+        this.scroll = Math.max(0, this.scroll - 20);
         this.refresh();
         return;
       }
       if (matchesKey(data, Key.pageDown)) {
-        this.scroll += 10;
+        this.scroll += 20;
         this.refresh();
         return;
       }
