@@ -116,6 +116,18 @@ function findMainTaskIndex(lines: string[], lineIndex: number): number | undefin
   return undefined;
 }
 
+function findTaskBlockEnd(lines: string[], startIndex: number): number {
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    if (/^##\s+/.test(line)) return i;
+
+    const task = getTaskLineState(line);
+    if (task && task.indent.length === 0) return i;
+  }
+
+  return lines.length;
+}
+
 function shouldKeepSubtaskInCurrentSection(lines: string[], lineIndex: number, changes: Map<number, boolean>): boolean {
   const task = getTaskLineState(lines[lineIndex] ?? "");
   if (!task || task.indent.length === 0) return false;
@@ -151,6 +163,15 @@ export function previewTaskDoneState(result: TaskBoard, lineIndex: number, done:
   task.done = done;
   task.display = task.display.replace(/^(\s*)[☑☐]\s+/, (_match, indent) => `${indent}${done ? "☑" : "☐"} `);
 
+  if (done && !task.display.startsWith("  ")) {
+    for (let i = taskIndex + 1; i < category.tasks.length; i++) {
+      const child = category.tasks[i]!;
+      if (!child.display.startsWith("  ")) break;
+      child.done = true;
+      child.display = child.display.replace(/^(\s*)[☑☐]\s+/, (_match, indent) => `${indent}☑ `);
+    }
+  }
+
   return next;
 }
 
@@ -168,8 +189,57 @@ export function applyTaskDoneChanges(cwd: string, changes: Map<number, boolean>)
       return move.done !== isDoneLine;
     });
 
-  const inPlaceChanges = moves.filter((move) => shouldKeepSubtaskInCurrentSection(originalLines, move.lineIndex, changes));
-  const relocations = moves.filter((move) => !shouldKeepSubtaskInCurrentSection(originalLines, move.lineIndex, changes));
+  const inPlaceChanges: Array<{ lineIndex: number; done: boolean; line: string }> = [];
+  const relocations: Array<{ startIndex: number; deleteCount: number; done: boolean; lines: string[] }> = [];
+  const relocatedLineIndexes = new Set<number>();
+
+  for (const move of moves) {
+    const state = getTaskLineState(move.line);
+    if (!state || state.indent.length > 0) continue;
+
+    const blockEnd = findTaskBlockEnd(originalLines, move.lineIndex);
+    const blockLines = originalLines.slice(move.lineIndex, blockEnd).map((line, offset) => {
+      const sourceLineIndex = move.lineIndex + offset;
+      const task = getTaskLineState(line);
+      if (!task) return line;
+
+      const explicitDone = changes.get(sourceLineIndex);
+      const nextDone = sourceLineIndex === move.lineIndex
+        ? move.done
+        : move.done
+          ? true
+          : explicitDone ?? task.done;
+
+      if (sourceLineIndex !== move.lineIndex && explicitDone === undefined && nextDone === task.done) return line;
+      return buildTaskLine(getTaskBody(line), nextDone, task.indent);
+    });
+
+    relocations.push({
+      startIndex: move.lineIndex,
+      deleteCount: blockEnd - move.lineIndex,
+      done: move.done,
+      lines: blockLines,
+    });
+
+    for (let i = move.lineIndex; i < blockEnd; i++) relocatedLineIndexes.add(i);
+  }
+
+  for (const move of moves) {
+    if (relocatedLineIndexes.has(move.lineIndex)) continue;
+
+    if (shouldKeepSubtaskInCurrentSection(originalLines, move.lineIndex, changes)) {
+      inPlaceChanges.push(move);
+      continue;
+    }
+
+    const indent = move.line.match(/^(\s*)/)?.[1] ?? "";
+    relocations.push({
+      startIndex: move.lineIndex,
+      deleteCount: 1,
+      done: move.done,
+      lines: [buildTaskLine(getTaskBody(move.line), move.done, indent)],
+    });
+  }
 
   let lines = [...originalLines];
   for (const move of inPlaceChanges) {
@@ -177,16 +247,15 @@ export function applyTaskDoneChanges(cwd: string, changes: Map<number, boolean>)
     lines[move.lineIndex] = buildTaskLine(getTaskBody(move.line), move.done, indent);
   }
 
-  for (const move of [...relocations].sort((a, b) => b.lineIndex - a.lineIndex)) {
-    lines.splice(move.lineIndex, 1);
+  for (const relocation of [...relocations].sort((a, b) => b.startIndex - a.startIndex)) {
+    lines.splice(relocation.startIndex, relocation.deleteCount);
   }
 
-  for (const move of [...relocations].sort((a, b) => b.lineIndex - a.lineIndex)) {
-    const destinationSection = move.done ? "Done" : "Active";
+  for (const relocation of [...relocations].sort((a, b) => b.startIndex - a.startIndex)) {
+    const destinationSection = relocation.done ? "Done" : "Active";
     const headingIndex = findSectionHeadingIndex(lines, destinationSection);
     if (headingIndex < 0) continue;
-    const indent = move.line.match(/^(\s*)/)?.[1] ?? "";
-    lines.splice(headingIndex + 1, 0, buildTaskLine(getTaskBody(move.line), move.done, indent));
+    lines.splice(headingIndex + 1, 0, ...relocation.lines);
   }
 
   writeFileSync(tasksPath, lines.join("\n"), "utf8");
