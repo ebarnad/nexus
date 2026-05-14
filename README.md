@@ -25,7 +25,7 @@ This repository provides a skill-driven work assistant for [Claude Code](https:/
 | `daily-sync` | Collects your 3 standup answers and posts them to the current team daily thread in Slack. |
 | `task-management` | Task conventions for `TASKS.md` (active, waiting, someday, done) and task update behavior. |
 | `memory-management` | Two-tier memory system: compact `CLAUDE.md` hot cache + detailed `memory/` knowledge base, with explicit `ingest`, `query`, and `lint` workflows. |
-| `memory-backup` | Backs up `CLAUDE.md`, `TASKS.md`, and `memory/` to a separate private Git repo clone. |
+| `memory-backup` | Syncs `CLAUDE.md`, `TASKS.md`, and `memory/` with a separate private Git repo clone, including push, pull, and sync modes. |
 
 ### External source readers
 
@@ -163,10 +163,14 @@ For parallel workflows, prefer explicit notebook IDs (`-n <id>` or `--notebook <
 3. Add `MEMORY_BACKUP_DIR` to your workspace `.env` file:
    - `MEMORY_BACKUP_DIR=/your/path/to/private-backup-repo`
 4. Run the skill:
-   - `/memory-backup`
-   - or `/memory-backup --dry-run`
+   - `/memory-backup` - push local memory to the backup repo
+   - `/memory-backup --pull` - pull latest backup into this workspace
+   - `/memory-backup --sync` - pull latest, then push local memory
+   - `/memory-backup --dry-run` - preview push
 
 `MEMORY_BACKUP_DIR` must point to a clean local clone of a separate private Git repo.
+
+For two-computer use, run `/memory-backup --pull` or `/memory-backup --sync` when starting work, and `/memory-backup` after memory/task changes. Pull/sync refuse to overwrite local changes in `CLAUDE.md`, `TASKS.md`, or `memory/`.
 
 ## Operating Notes
 
