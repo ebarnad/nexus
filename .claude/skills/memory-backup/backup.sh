@@ -48,8 +48,31 @@ if [[ ! -d "$BACKUP_DIR_REAL/.git" ]]; then
   exit 1
 fi
 
-if [[ -n "$(git -C "$BACKUP_DIR_REAL" status --porcelain)" ]]; then
+backup_tracked_changes=false
+backup_staged_changes=false
+backup_untracked_files=""
+
+if ! git -C "$BACKUP_DIR_REAL" diff --quiet; then
+  backup_tracked_changes=true
+fi
+
+if ! git -C "$BACKUP_DIR_REAL" diff --cached --quiet; then
+  backup_staged_changes=true
+fi
+
+backup_untracked_files="$(git -C "$BACKUP_DIR_REAL" ls-files --others --exclude-standard)"
+
+if [[ "$backup_tracked_changes" == true || "$backup_staged_changes" == true || -n "$backup_untracked_files" ]]; then
   printf 'Backup repo has uncommitted changes: %s\n' "$BACKUP_DIR_REAL" >&2
+  if [[ "$backup_tracked_changes" == true ]]; then
+    printf 'Tracked changes present.\n' >&2
+  fi
+  if [[ "$backup_staged_changes" == true ]]; then
+    printf 'Staged changes present.\n' >&2
+  fi
+  if [[ -n "$backup_untracked_files" ]]; then
+    printf 'Untracked files:\n%s\n' "$backup_untracked_files" >&2
+  fi
   exit 1
 fi
 
