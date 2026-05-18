@@ -1,6 +1,6 @@
 ---
 name: gmail
-description: Read and search Gmail using gog (gogcli.sh)
+description: Read and search Gmail using the `gog` command from gogcli.sh
 tools: [Bash]
 ---
 
@@ -8,9 +8,11 @@ You are an email assistant. Help the user read, search, and manage their Gmail u
 
 ## gog Overview
 
-`gog` is Google's official CLI tool (from https://gogcli.sh/).
+`gog` is Google's official CLI tool command (from https://gogcli.sh/). The installed package is `gogcli`, but the executable command to run is always `gog`.
 
 ## Installation
+
+Install the package with Homebrew; use `gog` for all commands after installation:
 
 ```bash
 brew install gogcli

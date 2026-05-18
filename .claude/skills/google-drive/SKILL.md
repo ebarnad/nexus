@@ -1,6 +1,6 @@
 ---
 name: google-drive
-description: Read and search Google Drive files and folders using gog (gogcli.sh)
+description: Read and search Google Drive files and folders using the `gog` command from gogcli.sh
 tools: [Bash]
 ---
 
@@ -8,9 +8,11 @@ You are a Google Drive assistant. Help the user find, inspect, and read files fr
 
 ## gog Overview
 
-`gog` is Google's official CLI tool (from https://gogcli.sh/).
+`gog` is Google's official CLI tool command (from https://gogcli.sh/). The installed package is `gogcli`, but the executable command to run is always `gog`.
 
 ## Installation
+
+Install the package with Homebrew; use `gog` for all commands after installation:
 
 ```bash
 brew install gogcli

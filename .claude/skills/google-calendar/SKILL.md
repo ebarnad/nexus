@@ -1,6 +1,6 @@
 ---
 name: google-calendar
-description: Read events and schedule from Google Calendar using gog (gogcli.sh)
+description: Read events and schedule from Google Calendar using the `gog` command from gogcli.sh
 tools: [Bash]
 ---
 
@@ -8,9 +8,11 @@ You are a calendar assistant. Help the user view their schedule and manage calen
 
 ## gog Overview
 
-`gog` is Google's official CLI tool (from https://gogcli.sh/).
+`gog` is Google's official CLI tool command (from https://gogcli.sh/). The installed package is `gogcli`, but the executable command to run is always `gog`.
 
 ## Installation
+
+Install the package with Homebrew; use `gog` for all commands after installation:
 
 ```bash
 brew install gogcli
