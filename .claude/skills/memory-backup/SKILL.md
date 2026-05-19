@@ -1,23 +1,27 @@
 ---
 name: memory-backup
-description: Backup CLAUDE.md, TASKS.md, and memory/ to a private Git repo
+description: Backup CLAUDE.md, TASKS.md, and memory/ to a private Git repo using `bash .claude/skills/memory-backup/backup.sh`.
 ---
 
 # Memory Backup
 
-Run the backup script for the current workspace. This command syncs only:
+Run the backup script for the current workspace. It syncs only:
 - `CLAUDE.md`
 - `TASKS.md`
 - `memory/`
 
 ## Usage
 
+Use Bash to run the script directly:
+
 ```bash
-/memory-backup            # push local memory to backup repo
-/memory-backup --pull     # pull latest backup into this workspace
-/memory-backup --sync     # pull latest, then push local memory
-/memory-backup --dry-run  # preview push
+bash .claude/skills/memory-backup/backup.sh            # push local memory to backup repo
+bash .claude/skills/memory-backup/backup.sh --pull     # pull latest backup into this workspace
+bash .claude/skills/memory-backup/backup.sh --sync     # pull latest, then push local memory
+bash .claude/skills/memory-backup/backup.sh --dry-run  # preview push
 ```
+
+Do not run `memory-backup` itself as a shell command; it is just the skill name.
 
 ## Setup
 
@@ -36,20 +40,6 @@ Requirements for `MEMORY_BACKUP_DIR`:
 - It should point to a private repo clone with push access configured.
 
 ## Instructions
-
-Use Bash to run:
-
-```bash
-bash .claude/skills/memory-backup/backup.sh
-```
-
-Other modes:
-
-```bash
-bash .claude/skills/memory-backup/backup.sh --pull
-bash .claude/skills/memory-backup/backup.sh --sync
-bash .claude/skills/memory-backup/backup.sh --dry-run
-```
 
 The script is the only thing that should perform the backup. Do not manually reconstruct the copy, add, commit, or push flow with ad hoc shell commands unless the user explicitly asks to debug the script itself.
 
