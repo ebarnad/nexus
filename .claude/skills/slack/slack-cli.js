@@ -396,15 +396,31 @@ const commands = {
     const limit = toInt(flags.limit, 50);
     const oldest = flags.days ? toEpochDaysAgo(flags.days) : null;
 
+    let channelIds = [];
+    let channelSource = "provided";
+
     if (flags.channels) {
-      const channelIds = flags.channels
+      channelIds = flags.channels
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      const needle = query.toLowerCase();
-      const rows = [];
+    } else {
+      channelSource = "listed";
+      const types = flags.types || "public_channel,private_channel,mpim,im";
+      const channelLimit = toInt(flags["channel-limit"] || flags.channel_limit, 100);
+      const resp = await web.conversations.list({
+        types,
+        limit: Math.min(1000, channelLimit),
+      });
+      channelIds = (resp.channels || []).map((c) => c.id).filter(Boolean);
+    }
 
-      for (const channelId of channelIds) {
+    const needle = query.toLowerCase();
+    const rows = [];
+    const errors = [];
+
+    for (const channelId of channelIds) {
+      try {
         const messages = await fetchHistory(channelId, { limit, oldest });
         const matches = messages
           .filter((m) => (m.text || "").toLowerCase().includes(needle))
@@ -413,62 +429,32 @@ const commands = {
             ...messagesToRows(channelId, [m])[0],
           }));
         rows.push(...matches);
+      } catch (err) {
+        errors.push({ channel_id: channelId, error: err.data?.error || err.message });
       }
-
-      if (asJson) {
-        printResult(
-          { mode: "local", query, count: rows.length, messages: rows },
-          true,
-        );
-      } else {
-        printHumanMessages(rows, true);
-      }
-      return;
     }
 
-    const slackQuery = oldest
-      ? `${query} after:${new Date(parseInt(oldest, 10) * 1000).toISOString().slice(0, 10)}`
-      : query;
-    const resp = await web.search.messages({
-      query: slackQuery,
-      count: Math.min(limit, 100),
-      sort: "timestamp",
-      sort_dir: "desc",
-    });
-    const matches = ((resp.messages && resp.messages.matches) || []).slice(
-      0,
-      limit,
-    );
-
-    const rows = matches.map((m) => ({
-      channel_id: m.channel && m.channel.id,
-      channel_name: m.channel && m.channel.name,
-      ts: m.ts,
-      time: tsToLocal(m.ts),
-      user_id: m.user,
-      text: m.text || "",
-      permalink: m.permalink || null,
-      thread_ts: m.thread_ts || null,
-      reply_count: m.reply_count || 0,
-    }));
+    rows.sort((a, b) => parseFloat(b.ts || 0) - parseFloat(a.ts || 0));
+    const limitedRows = rows.slice(0, limit);
 
     if (asJson) {
       printResult(
         {
-          mode: "search_api",
-          query: slackQuery,
-          count: rows.length,
-          messages: rows,
+          mode: "local",
+          channel_source: channelSource,
+          query,
+          scanned_channels: channelIds.length,
+          count: limitedRows.length,
+          messages: limitedRows,
+          errors,
         },
         true,
       );
     } else {
-      rows.forEach((row) => {
-        console.log(
-          `[${row.channel_name || row.channel_id}] [${row.time}] ${compactText(row.text, 220)}`,
-        );
-        if (row.permalink) console.log(`  ${row.permalink}`);
-      });
+      printHumanMessages(limitedRows, true);
+      if (errors.length) {
+        console.error(`Skipped ${errors.length} channel(s) due to access/API errors.`);
+      }
     }
   },
 
@@ -874,7 +860,7 @@ Commands:
   channels [--filter regex] [--limit N] [--types types] [--json]
   history <channelId> [--limit N] [--days N] [--oldest ts] [--latest ts] [--json]
   dm-history <userId> [--limit N] [--days N] [--oldest ts] [--latest ts] [--json]
-  search <query> [--channels C1,C2] [--days N] [--limit N] [--json]
+  search <query> [--channels C1,C2] [--days N] [--limit N] [--channel-limit N] [--json]
   messages-filter <channelId> --pattern <regex> [--days N] [--limit N] [--json]
   threads <channelId> [--days N] [--limit N] [--json]
   thread-get <channelId> <threadTs> [--limit N] [--json]
