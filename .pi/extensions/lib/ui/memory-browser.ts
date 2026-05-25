@@ -5,6 +5,8 @@ import { Key, Markdown, matchesKey, truncateToWidth, visibleWidth } from "@mario
 import { readFileSync, statSync } from "node:fs";
 import { fuzzyScore, type MemoryFile } from "../memory";
 
+type LoadIntoContextHandler = (file: MemoryFile, text: string) => void;
+
 export class MemoryBrowserComponent implements Component {
   private query = "";
   private selected = 0;
@@ -13,6 +15,7 @@ export class MemoryBrowserComponent implements Component {
   private openText = "";
   private openLines: string[] = [];
   private openError?: string;
+  private loadMessage?: string;
   private renderMarkdown = true;
   private renderedFileWidth?: number;
   private renderedFileMode?: "markdown" | "raw";
@@ -29,6 +32,7 @@ export class MemoryBrowserComponent implements Component {
     private readonly files: MemoryFile[],
     private readonly error: string | undefined,
     private readonly done: () => void,
+    private readonly onLoadIntoContext?: LoadIntoContextHandler,
   ) {}
 
   private getMatches(): MemoryFile[] {
@@ -67,7 +71,10 @@ export class MemoryBrowserComponent implements Component {
 
     this.openFile = file;
     this.scroll = 0;
+    this.openText = "";
+    this.openLines = [];
     this.openError = undefined;
+    this.loadMessage = undefined;
     this.invalidateRenderedFile();
     try {
       const stat = statSync(file.path);
@@ -90,8 +97,25 @@ export class MemoryBrowserComponent implements Component {
     this.openText = "";
     this.openLines = [];
     this.openError = undefined;
+    this.loadMessage = undefined;
     this.invalidateRenderedFile();
     this.scroll = 0;
+    this.refresh();
+  }
+
+  private isOpenMarkdownFile(): boolean {
+    return this.openFile ? /\.md(?:own)?$/i.test(this.openFile.relativePath) : false;
+  }
+
+  private loadOpenFileIntoContext() {
+    if (!this.openFile || !this.isOpenMarkdownFile()) return;
+    if (this.openError) {
+      this.loadMessage = "Cannot load file with read error.";
+      this.refresh();
+      return;
+    }
+    this.onLoadIntoContext?.(this.openFile, this.openText);
+    this.loadMessage = `Loaded memory/${this.openFile.relativePath} into session context.`;
     this.refresh();
   }
 
@@ -127,6 +151,10 @@ export class MemoryBrowserComponent implements Component {
         this.invalidateRenderedFile();
         this.scroll = 0;
         this.refresh();
+        return;
+      }
+      if (data === "l") {
+        this.loadOpenFileIntoContext();
         return;
       }
       if (data === "b") this.closeFile();
@@ -190,9 +218,11 @@ export class MemoryBrowserComponent implements Component {
       const maxScroll = Math.max(0, renderedLines.length - height);
       this.scroll = Math.min(this.scroll, maxScroll);
       const modeHint = isMarkdownFile ? `${mode} · ` : "raw · ";
+      const loadHint = isMarkdownFile ? " · l load context" : "";
       lines.push(row(`${this.theme.fg("accent", this.theme.bold(`memory/${this.openFile.relativePath}`))} ${this.theme.fg("muted", `${modeHint}${this.scroll + 1}/${Math.max(1, renderedLines.length)}`)}`));
-      lines.push(row(this.theme.fg("dim", "↑/k ↓/j scroll · PgUp/PgDn jump · r raw/markdown · Esc/b back")));
-      lines.push(row());
+      lines.push(row(this.theme.fg("dim", `↑/k ↓/j scroll · PgUp/PgDn jump · r raw/markdown${loadHint} · Esc/b back`)));
+      if (this.loadMessage) lines.push(row(this.theme.fg("success", `✓ ${this.loadMessage}`)));
+      else lines.push(row());
       if (this.openError) {
         lines.push(row(this.theme.fg("error", `⚠ ${this.openError}`)));
       } else {

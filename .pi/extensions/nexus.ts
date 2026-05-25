@@ -1,6 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { readTaskCategories, readTaskItems, applyTaskDoneChanges } from "./lib/tasks";
-import { readMemoryFiles, readMemoryLogLines, formatMemoryLogLine, readLatestMemoryLog } from "./lib/memory";
+import { readMemoryFiles, readMemoryLogLines, formatMemoryLogLine, readLatestMemoryLog, type MemoryFile } from "./lib/memory";
 import { readLatestBackup, runMemoryBackup } from "./lib/backup";
 import { warmCalendarDays } from "./lib/calendar";
 import { STANDARD_OVERLAY_OPTIONS, CALENDAR_OVERLAY_OPTIONS } from "./lib/ui/overlay";
@@ -76,12 +76,34 @@ async function openCalendarOverlay(ctx: ExtensionContext) {
   );
 }
 
-async function showMemoryBrowser(ctx: ExtensionContext) {
+function loadMemoryFileIntoContext(pi: ExtensionAPI, ctx: ExtensionContext, file: MemoryFile, text: string) {
+  const displayPath = `memory/${file.relativePath}`;
+  pi.sendMessage({
+    customType: "nexus-memory-context",
+    content: `The following memory markdown file has been loaded into the current session context. Use it as reference for future responses in this session.\n\n<memory_file path="${displayPath}">\n${text}\n</memory_file>`,
+    display: false,
+    details: {
+      path: displayPath,
+      bytes: Buffer.byteLength(text, "utf8"),
+      loadedAt: new Date().toISOString(),
+    },
+  });
+  ctx.ui.notify(`Loaded ${displayPath} into session context`, "info");
+}
+
+async function showMemoryBrowser(pi: ExtensionAPI, ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
 
   const result = readMemoryFiles(ctx.cwd);
   await ctx.ui.custom<void>(
-    (tui, theme, _keybindings, done) => new MemoryBrowserComponent(tui, theme, result.files, result.error, done),
+    (tui, theme, _keybindings, done) => new MemoryBrowserComponent(
+      tui,
+      theme,
+      result.files,
+      result.error,
+      done,
+      (file, text) => loadMemoryFileIntoContext(pi, ctx, file, text),
+    ),
     {
       overlay: true,
       overlayOptions: STANDARD_OVERLAY_OPTIONS,
@@ -118,7 +140,7 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("memory", {
     description: "Fuzzy browse and view files under memory/",
     handler: async (_args, ctx) => {
-      await showMemoryBrowser(ctx);
+      await showMemoryBrowser(pi, ctx);
     },
   });
 
