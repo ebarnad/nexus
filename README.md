@@ -26,6 +26,7 @@ This repository provides a skill-driven work assistant for [Claude Code](https:/
 | `task-management` | Task conventions for `TASKS.md` (active, waiting, someday, done) and task update behavior. |
 | `memory-management` | Two-tier memory system: compact `CLAUDE.md` hot cache + detailed `memory/` knowledge base, with explicit `ingest`, `query`, and `lint` workflows. |
 | `memory-backup` | Syncs `CLAUDE.md`, `TASKS.md`, and `memory/` with a separate private Git repo clone, including push, pull, and sync modes. |
+| `journal-sync` | Imports recent Notion Journal entries into monthly `memory/journals/month_YYYY-MM_text.txt` files with incremental sync tracking. |
 
 ### External source readers
 
@@ -35,6 +36,7 @@ This repository provides a skill-driven work assistant for [Claude Code](https:/
 | `google-calendar` | Reads Google Calendar via `gog`. |
 | `google-drive` | Reads and searches Google Drive folders and files via `gog`. |
 | `slack` | Reads and sends Slack messages via `.claude/skills/slack/slack-cli.js` with `@slack/web-api`. |
+| `notion` | Reads, searches, and updates Notion pages, data sources/databases, Markdown, files, and Workers via the official `ntn` CLI. |
 | `notebooklm` | Manages NotebookLM notebooks, sources, chats, and generated artifacts via `notebooklm-py`. |
 
 ## Pi Agent Extensions
@@ -62,10 +64,13 @@ The Pi extension provides a continuous status bar widget and several interactive
 │       ├── daily-sync/
 │       ├── task-management/
 │       ├── memory-management/
+│       ├── memory-backup/
+│       ├── journal-sync/
 │       ├── gmail/
 │       ├── google-calendar/
 │       ├── google-drive/
 │       ├── slack/
+│       ├── notion/
 │       └── notebooklm/
 ├── TASKS.md         # generated/maintained by workflow
 ├── CLAUDE.md        # generated hot-memory file
@@ -73,6 +78,7 @@ The Pi extension provides a continuous status bar widget and several interactive
 ├── dashboard.html   # copied to root for browser use
 └── memory/
     ├── glossary.md
+    ├── journals/
     ├── people/
     ├── projects/
     ├── context/
@@ -87,6 +93,7 @@ The Pi extension provides a continuous status bar widget and several interactive
 4. Use `/work-update` regularly to keep tasks and memory fresh.
 5. Use `/daily-sync` to post your standup update to the right Slack thread.
 6. Optional: configure `MEMORY_BACKUP_DIR` if you want to use `/memory-backup`.
+7. Optional: configure Notion and run `/journal-sync` to import recent Journal entries into memory.
 
 ## Prerequisites
 
@@ -97,6 +104,9 @@ The Pi extension provides a continuous status bar widget and several interactive
   - `npm install`
 - `gog` CLI:
   - `brew install gogcli`
+- `ntn` CLI for Notion:
+  - `npm install --global ntn`
+  - or use the local helper: `npm run --silent ntn -- ...`
 - `notebooklm` CLI:
   - `uv venv`
   - `uv pip install --python .venv/bin/python "notebooklm-py[browser]"`
@@ -137,6 +147,18 @@ The Pi extension provides a continuous status bar widget and several interactive
    - `SLACK_TOKEN=xoxp-your-token`
 6. Verify:
    - `node .claude/skills/slack/slack-cli.js test`
+
+### Notion (via `ntn`)
+
+1. Create a Notion integration and copy its internal integration token.
+2. Share each target page/database with the integration (`...` → `Connect to`).
+3. Add the token to `.env`:
+   - `NOTION_API_TOKEN=ntn_your_token_here`
+   - optional: `NOTION_WORKSPACE_ID=<workspace_id>`
+4. Verify:
+   - `npm run --silent ntn -- api v1/users`
+
+Use `/notion` for general Notion operations. Use `/journal-sync` to import the configured Journal data source into `memory/journals/`.
 
 ### NotebookLM (via notebooklm-py)
 
