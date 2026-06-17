@@ -77,8 +77,8 @@ Project-local agents useful for this workflow:
 
 Use subagents this way:
 1. Before spawning new scanners, check the current conversation for completed `activity-scanner` outputs, especially scheduled hourly runs.
-2. Reuse existing scanner outputs when their `## Scanner metadata` shows they cover the current `work-update` scope, sources, and time window.
-3. Spawn new `activity-scanner` agents only for missing sources, uncovered time windows, stale/unclear outputs, low-confidence findings, or explicit user refresh requests.
+2. Reuse existing scanner outputs when their `## Scanner metadata` shows a useful run time and relevant sources scanned.
+3. Spawn new `activity-scanner` agents only for missing sources, stale/low-confidence outputs, or explicit user refresh requests.
 4. Aggregate reused and newly scanned outputs in the parent agent.
 5. Pass the aggregated task-like findings to `task-reconciler` before asking the user to confirm task edits.
 6. Pass the aggregated memory-like findings to `memory-curator` before applying safe memory updates or asking for confirmation.
@@ -86,20 +86,20 @@ Use subagents this way:
 #### Reusing Hourly Scheduled Scanner Results
 
 If `activity-scanner` runs hourly and the user runs `work-update` at end of day, do not treat older same-day scanner outputs as stale merely because they are more than a few hours old. Instead:
-- Reuse all visible completed scanner outputs from the current workday, or since the last known `work-update`, when their metadata covers relevant sources/time windows.
+- Reuse all visible completed scanner outputs from the current workday, or since the last known `work-update`, when their metadata shows relevant sources scanned.
 - Deduplicate repeated findings across hourly runs.
-- Identify coverage gaps by source and time window.
-- Run a small catch-up scan only for gaps, commonly "since the latest scanner run" or for sources not covered by scheduled scans.
+- Identify gaps by source.
+- Run a small catch-up scan only for sources not covered by scheduled scans or when recent scanner outputs are missing/stale.
 - If scanner outputs are not visible in the current conversation and no agent IDs are available to retrieve, fall back to normal scanning.
 
 When reusing scanner outputs, mention it in the final report, for example:
 
 ```text
 Reused scanner outputs:
-- Slack/email/calendar scans from 09:00-17:00 covering hourly windows
+- Slack/email/calendar scanner runs from 09:00-17:00
 
 New scans:
-- Catch-up scan from 17:00-now
+- Catch-up scan because recent scanner outputs were missing/stale
 - Recent docs, because scheduled scans did not cover Drive/Notion
 ```
 

@@ -70,9 +70,9 @@ This repo includes a project-local Pi prompt template:
 /scan
 ```
 
-It schedules `activity-scanner` to run hourly in the current Pi session. Each run scans Slack, Gmail, Calendar, `TASKS.md`, and relevant memory for work-update signals from the last hour, returning concise high-confidence findings with scanner metadata.
+It schedules `activity-scanner` to run hourly in the current Pi session. Each run scans Slack, Gmail, Calendar, `TASKS.md`, and relevant memory for recent work-update signals, returning concise high-confidence findings with scanner metadata.
 
-Use `/scan` in the Pi session you want to treat as your work-monitoring session. Scheduled runs are session-scoped, only fire while that session is active/resumed, and do not replay missed runs. Later, `/work-update` can reuse visible hourly scanner outputs and only perform catch-up scans for uncovered sources or time windows.
+Use `/scan` in the Pi session you want to treat as your work-monitoring session. Scheduled runs are session-scoped, only fire while that session is active/resumed, and do not replay missed runs. Later, `/work-update` can reuse visible scanner outputs based on their run time and sources scanned, then perform catch-up scans only for missing or stale sources.
 
 Design rules:
 - Subagents collect and classify only; the parent workflow remains responsible for user confirmation and file edits.

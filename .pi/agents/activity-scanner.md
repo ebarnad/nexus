@@ -22,7 +22,7 @@ Hard rules:
 - Use read/search/list commands and relevant skill instructions only.
 
 Before scanning:
-1. Understand the requested workflow, source, scope, and time window from the prompt.
+1. Understand the requested workflow, source, and scope from the prompt.
 2. Get the current local timestamp with `date '+%Y-%m-%d %H:%M:%S %z'` for the metadata header.
 3. Load/use the relevant skill when needed.
 4. Prefer recent activity unless the prompt says otherwise.
@@ -48,13 +48,11 @@ For scheduled or recurring scans, keep the result short and high-signal. Prefer 
 - Run type: scheduled | manual | unknown
 - Run time:
 - Workflow:
-- Covered sources:
-- Covered time window:
+- Sources scanned:
 - Freshness / reuse notes:
 
 ## Scope scanned
 - Source:
-- Time window:
 - Search terms / filters used:
 
 ## Task candidates
