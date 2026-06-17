@@ -1,9 +1,25 @@
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { readTaskCategories, readTaskItems, applyTaskDoneChanges } from "./lib/tasks";
-import { readMemoryFiles, readMemoryLogLines, formatMemoryLogLine, readLatestMemoryLog, type MemoryFile } from "./lib/memory";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+} from "@mariozechner/pi-coding-agent";
+import {
+  readTaskCategories,
+  readTaskItems,
+  applyTaskDoneChanges,
+} from "./lib/tasks";
+import {
+  readMemoryFiles,
+  readMemoryLogLines,
+  formatMemoryLogLine,
+  readLatestMemoryLog,
+  type MemoryFile,
+} from "./lib/memory";
 import { readLatestBackup, runMemoryBackup } from "./lib/backup";
 import { warmCalendarDays } from "./lib/calendar";
-import { STANDARD_OVERLAY_OPTIONS, CALENDAR_OVERLAY_OPTIONS } from "./lib/ui/overlay";
+import {
+  STANDARD_OVERLAY_OPTIONS,
+  CALENDAR_OVERLAY_OPTIONS,
+} from "./lib/ui/overlay";
 import { TasksModalComponent } from "./lib/ui/tasks-modal";
 import { CalendarPanelComponent } from "./lib/ui/calendar-panel";
 import { MemoryBrowserComponent } from "./lib/ui/memory-browser";
@@ -25,17 +41,23 @@ function updateWidget(ctx: ExtensionContext) {
 
   let logSummary = "";
   if (latestLog) {
-    const timeMatch = latestLog.timestamp.match(/(\d{4})-(\d{2})-(\d{2})\s(\d{2}:\d{2})/);
-    const shortTime = timeMatch ? `${timeMatch[3]}-${timeMatch[2]}-${timeMatch[1]} ${timeMatch[4]}` : latestLog.timestamp;
+    const timeMatch = latestLog.timestamp.match(
+      /(\d{4})-(\d{2})-(\d{2})\s(\d{2}:\d{2})/,
+    );
+    const shortTime = timeMatch
+      ? `${timeMatch[3]}-${timeMatch[2]}-${timeMatch[1]} ${timeMatch[4]}`
+      : latestLog.timestamp;
     const parts = latestLog.description.split(" · ");
     const shortDesc = parts.slice(0, 2).join(" ");
     logSummary = ` · ${theme.fg("muted", "log")} ${theme.fg("muted", shortTime)} ${theme.fg("dim", shortDesc)}`;
   }
 
-  const backupSummary = backup ? ` · ${theme.fg("muted", "backup")} ${theme.fg("dim", backup)}` : "";
+  const backupSummary = backup
+    ? ` · ${theme.fg("muted", "backup")} ${theme.fg("dim", backup)} · `
+    : "";
 
   ctx.ui.setWidget(WIDGET_ID, undefined);
-  ctx.ui.setStatus(WIDGET_ID, `${theme.fg("dim", "· ")}${taskSummary}${logSummary}${backupSummary}`);
+  ctx.ui.setStatus(WIDGET_ID, ` · ${taskSummary}${logSummary}${backupSummary}`);
 }
 
 async function openTasksModal(ctx: ExtensionContext) {
@@ -44,13 +66,8 @@ async function openTasksModal(ctx: ExtensionContext) {
   const result = readTaskCategories(ctx.cwd);
   const pendingChanges = new Map<number, boolean>();
   await ctx.ui.custom<void>(
-    (tui, theme, _keybindings, done) => new TasksModalComponent(
-      tui,
-      theme,
-      result,
-      pendingChanges,
-      done,
-    ),
+    (tui, theme, _keybindings, done) =>
+      new TasksModalComponent(tui, theme, result, pendingChanges, done),
     {
       overlay: true,
       overlayOptions: STANDARD_OVERLAY_OPTIONS,
@@ -68,7 +85,8 @@ async function openCalendarOverlay(ctx: ExtensionContext) {
 
   warmCalendarDays(ctx.cwd);
   await ctx.ui.custom<void>(
-    (tui, theme, _keybindings, done) => new CalendarPanelComponent(tui, theme, ctx.cwd, done),
+    (tui, theme, _keybindings, done) =>
+      new CalendarPanelComponent(tui, theme, ctx.cwd, done),
     {
       overlay: true,
       overlayOptions: CALENDAR_OVERLAY_OPTIONS,
@@ -76,7 +94,12 @@ async function openCalendarOverlay(ctx: ExtensionContext) {
   );
 }
 
-function loadMemoryFileIntoContext(pi: ExtensionAPI, ctx: ExtensionContext, file: MemoryFile, text: string) {
+function loadMemoryFileIntoContext(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+  file: MemoryFile,
+  text: string,
+) {
   const displayPath = `memory/${file.relativePath}`;
   pi.sendMessage({
     customType: "nexus-memory-context",
@@ -96,14 +119,15 @@ async function showMemoryBrowser(pi: ExtensionAPI, ctx: ExtensionContext) {
 
   const result = readMemoryFiles(ctx.cwd);
   await ctx.ui.custom<void>(
-    (tui, theme, _keybindings, done) => new MemoryBrowserComponent(
-      tui,
-      theme,
-      result.files,
-      result.error,
-      done,
-      (file, text) => loadMemoryFileIntoContext(pi, ctx, file, text),
-    ),
+    (tui, theme, _keybindings, done) =>
+      new MemoryBrowserComponent(
+        tui,
+        theme,
+        result.files,
+        result.error,
+        done,
+        (file, text) => loadMemoryFileIntoContext(pi, ctx, file, text),
+      ),
     {
       overlay: true,
       overlayOptions: STANDARD_OVERLAY_OPTIONS,
@@ -152,12 +176,17 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerCommand("logs", {
-    description: "Browse memory/log.md entries with Older/Newer buttons. Usage: /logs [page-size]",
+    description:
+      "Browse memory/log.md entries with Older/Newer buttons. Usage: /logs [page-size]",
     handler: async (args, ctx) => {
-      const pageSize = Math.min(Math.max(Number.parseInt(args.trim() || "12", 10) || 12, 5), 30);
+      const pageSize = Math.min(
+        Math.max(Number.parseInt(args.trim() || "12", 10) || 12, 5),
+        30,
+      );
       const entries = readMemoryLogLines(ctx.cwd).map(formatMemoryLogLine);
       await ctx.ui.custom<void>(
-        (tui, theme, _keybindings, done) => new LogBrowserComponent(tui, theme, entries, pageSize, done),
+        (tui, theme, _keybindings, done) =>
+          new LogBrowserComponent(tui, theme, entries, pageSize, done),
         {
           overlay: true,
           overlayOptions: STANDARD_OVERLAY_OPTIONS,
