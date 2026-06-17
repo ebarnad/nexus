@@ -55,17 +55,16 @@ jq '[.results[] | {
 # Fetch markdown and append only non-duplicates (iterate IDs directly).
 sorted_file=/tmp/sorted_entries.json
 jq -r '.[].id' /tmp/sorted_entries.json | while IFS= read -r id; do
-  name=$(jq -r ".[] | select(.id == \"$id\") | .name" "$sorted_file")
   date=$(jq -r ".[] | select(.id == \"$id\") | .date" "$sorted_file")
 
   if [[ ! "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]; then
-    echo "WARNING: Malformed date '$date', skipping '$name' ($id)" >> /tmp/sync_warnings.log
+    echo "WARNING: Malformed date '$date', skipping ($id)" >> /tmp/sync_warnings.log
     continue
   fi
 
   month_file="memory/journals/month_${date:0:7}_text.txt"
   if ! raw=$(npm run --silent ntn -- api "v1/pages/${id}/markdown" </dev/null 2>>/tmp/sync_warnings.log); then
-    echo "WARNING: Failed markdown fetch for '$name' ($id)" >> /tmp/sync_warnings.log
+    echo "WARNING: Failed markdown fetch for ($id)" >> /tmp/sync_warnings.log
     continue
   fi
 
@@ -73,14 +72,34 @@ jq -r '.[].id' /tmp/sorted_entries.json | while IFS= read -r id; do
   first_line=$(printf '%s\n' "$markdown" | awk 'NF {print; exit}')
 
   if [ -z "$markdown" ] || [ -z "$first_line" ]; then
-    echo "WARNING: Empty markdown for '$name' ($id), skipping" >> /tmp/sync_warnings.log
+    echo "WARNING: Empty markdown for ($id), skipping" >> /tmp/sync_warnings.log
   else
-    # Quick dedup: check if first line of content already exists in file
-    if grep -qFx "$first_line" "$month_file" 2>/dev/null; then
-      echo "SKIP: '$name' already exists in $month_file" | tee -a /tmp/journal_sync_skipped.log
+    # Fuzzy dedup: normalize by replacing special chars, then do line-by-line comparison
+    skip=$(python3 -c '
+import sys
+def norm(s):
+    s = s.strip()
+    s = s.replace(chr(8217), chr(39)).replace(chr(8216), chr(39))
+    s = s.replace(chr(8212), "-").replace(chr(8209), "-")
+    s = s.replace(chr(8220), chr(34)).replace(chr(8221), chr(34))
+    return " ".join(s.split())
+fl = sys.argv[1]
+norm_fl = norm(fl)
+with open(sys.argv[2]) as f:
+    for line in f:
+        if norm_fl == norm(line):
+            print(1)
+            sys.exit(0)
+print(0)
+' "$first_line" "$month_file" 2>/dev/null || true)
+    [ -z "$skip" ] && skip=0
+    if [ "$skip" = "1" ]; then
+      echo "SKIP: '$first_line' already exists in $month_file (line match)" | tee -a /tmp/journal_sync_skipped.log
     else
-      { printf '\n---\n%s\n' "$name"; printf '%s\n' "$markdown"; } >> "$month_file"
-      echo "WRITTEN: '$name' to $month_file" | tee -a /tmp/journal_sync_written.log
+      # Get name from notion properties for display
+      notion_name=$(jq -r ".[] | select(.id == \"$id\") | .name" "$sorted_file")
+      { printf '\n---\n%s\n' "$notion_name"; printf '%s\n' "$markdown"; } >> "$month_file"
+      echo "WRITTEN: '$first_line' to $month_file" | tee -a /tmp/journal_sync_written.log
     fi
   fi
 
