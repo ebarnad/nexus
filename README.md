@@ -70,7 +70,7 @@ This repo includes a project-local Pi prompt template:
 /scan
 ```
 
-It schedules `activity-scanner` to run hourly in the current Pi session. Each run scans Slack, Gmail, Calendar, `TASKS.md`, and relevant memory for recent work-update signals, returning concise high-confidence findings with scanner metadata.
+It schedules `activity-scanner` to run at 9am, 12pm, 3pm, and 6pm Monday-Friday in the current Pi session using cron expression `0 0 9,12,15,18 * * 1-5`. Each run scans Slack, Gmail, Calendar, `TASKS.md`, and relevant memory for recent work-update signals, returning concise high-confidence findings with scanner metadata.
 
 Use `/scan` in the Pi session you want to treat as your work-monitoring session. Scheduled runs are session-scoped, only fire while that session is active/resumed, and do not replay missed runs. Later, `/work-update` can reuse visible scanner outputs based on their run time and sources scanned, then perform catch-up scans only for missing or stale sources.
 
@@ -132,7 +132,7 @@ If you add or rename agents, restart Pi or start a new session so the `Agent` to
 4. Use `/work-update` regularly to keep tasks and memory fresh.
 5. Use `/daily-sync` to post your standup update to the right Slack thread.
 6. Optional for Pi: install `@tintinweb/pi-subagents` to enable the project-local agents in `.pi/agents/`.
-7. Optional for Pi: run `/scan` in your work-monitoring session to schedule hourly read-only activity scans.
+7. Optional for Pi: run `/scan` in your work-monitoring session to schedule read-only activity scans during work hours.
 8. Optional: configure `MEMORY_BACKUP_DIR` if you want to use `/memory-backup`.
 9. Optional: configure Notion and run `/journal-sync` to import recent Journal entries into memory.
 

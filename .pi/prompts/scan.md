@@ -1,7 +1,9 @@
 ---
-description: Schedule hourly activity-scanner for work-update signals
+description: Schedule activity-scanner during work hours for work-update signals
 ---
-Schedule `activity-scanner` every hour for this Pi session.
+Schedule `activity-scanner` for 9am, 12pm, 3pm, and 6pm Monday-Friday in this Pi session.
+
+Use this schedule expression: `0 0 9,12,15,18 * * 1-5`.
 
 Use this exact scheduled subagent intent:
 
