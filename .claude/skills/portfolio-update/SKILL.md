@@ -4,13 +4,18 @@ description: Fetches live prices for equities and forex for investment portfolio
 tools: [Bash]
 ---
 
+PORTFOLIO_FILE: Find the equities holdings file (search by name, then ask user):
+  - Look for files matching `*investment*portfolio*` or `*equity*portfolio*`
+  - Search common directories: memory/, projects/, current dir
+  - If none found, prompt user for the path.
+
 # Portfolio Update
 
-Refresh your equities holdings table in `memory/projects/investment_portfolio.md` by fetching the latest Yahoo Finance prices for each ticker plus MYR/USD forex rate.
+Refresh your equities holdings table in PORTFOLIO_FILE by fetching the latest Yahoo Finance prices for each ticker plus MYR/USD forex rate.
 
 ## Workflow
 
-1. Check if `memory/projects/investment_portfolio.md` exists and has a **Holdings** section with a markdown table
+1. Check if PORTFOLIO_FILE exists and has a **Holdings** section with a markdown table
 2. Parse holdings: symbol, shares, cost basis USD/share from that table
 3. Batch fetch all tickers + forex in one call (fastest):
    ```bash
@@ -18,11 +23,11 @@ Refresh your equities holdings table in `memory/projects/investment_portfolio.md
    python3 equity-price-fetcher.py --forex=USDMYR=X    # MYR/USD rate
    ```
 4. Calculate Live Value (USD), Live Value (RM), and Unrealized P/L for each holding
-5. Write back updated snapshot table to `memory/projects/investment_portfolio.md`
+5. Write back updated snapshot table to PORTFOLIO_FILE
 
 ## First-Time Setup (portfolio.md missing)
 
-If `memory/projects/investment_portfolio.md` doesn't exist, create a template with your tickers:
+If PORTFOLIO_FILE doesn't exist, create a template with your tickers:
 
 ```
 | Symbol | Shares | Cost Price | Live Price | RM Cost Basis | Live Value (USD) | Live Value (RM)* | Unrealized |
@@ -46,7 +51,7 @@ python3 equity-price-fetcher.py --forex=USDMYR=X    # MYR/USD rate
 
 ## Portfolio.md Format
 
-The holdings table in `memory/projects/investment_portfolio.md` must be in this table format:
+The holdings table in PORTFOLIO_FILE must be in this table format:
 
 | Symbol | Shares | Cost Price | Live Price | RM Cost Basis | Live Value (USD) | Live Value (RM)* | Unrealized |
 |--------|--------|------------|------------|---------------|------------------|------------------|------------|
