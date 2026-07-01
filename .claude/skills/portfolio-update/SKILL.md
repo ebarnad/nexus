@@ -19,8 +19,9 @@ Refresh your equities holdings table in PORTFOLIO_FILE by fetching the latest Ya
 2. Parse holdings: symbol, shares, cost basis USD/share from that table
 3. Batch fetch all tickers + forex in one call (fastest):
    ```bash
-   python3 equity-price-fetcher.py "XXX|YYY|ZZZ"  # fetches all at once
-   python3 equity-price-fetcher.py --forex=USDMYR=X    # MYR/USD rate
+   PYTHON=./.claude/skills/portfolio-update/equity-price-fetcher.py
+   python3 $PYTHON "XXX|YYY|ZZZ"  # fetches all at once
+   python3 $PYTHON --forex=USDMYR=X    # MYR/USD rate
    ```
 4. Calculate Live Value (USD), Live Value (RM), and Unrealized P/L for each holding
 5. Write back updated snapshot table to PORTFOLIO_FILE
@@ -37,16 +38,18 @@ If PORTFOLIO_FILE doesn't exist, create a template with your tickers:
 Fill in your tickers, shares, and cost prices. Then run the update skill to fetch live prices:
 
 ```bash
-python3 equity-price-fetcher.py "XXX|YYY|ZZZ"  # batch fetch all at once
-python3 equity-price-fetcher.py --forex=USDMYR=X    # get MYR/USD rate
+PYTHON=./.claude/skills/portfolio-update/equity-price-fetcher.py
+python3 $PYTHON "XXX|YYY|ZZZ"  # batch fetch all at once
+python3 $PYTHON --forex=USDMYR=X    # get MYR/USD rate
 ```
 
 ## Individual Price Check (no write-back)
 
 ```bash
-python3 equity-price-fetcher.py XXX --period 5d     # latest price
-python3 equity-price-fetcher.py YYY --period 6mo    # historical
-python3 equity-price-fetcher.py --forex=USDMYR=X    # MYR/USD rate
+PYTHON=./.claude/skills/portfolio-update/equity-price-fetcher.py
+python3 $PYTHON XXX --period 5d     # latest price
+python3 $PYTHON YYY --period 6mo    # historical
+python3 $PYTHON --forex=USDMYR=X    # MYR/USD rate
 ```
 
 ## Portfolio.md Format
@@ -60,4 +63,4 @@ The holdings table in PORTFOLIO_FILE must be in this table format:
 | ZZZ    | 20     | $15.00     | **$16.10**   | RM 483       | $322             | RM 1,256        | RM +22    |
 | **Total** |      |            |            | **RM 4,091** | **$1,837.5**    | **RM 7,167**   | **RM +244.5 ✅** |
 
-The update script reads this table, fetches live prices for each symbol via equity-price-fetcher.py, and rewrites the Holdings section with current values (price, RM value, unrealized P/L).
+The update script reads this table, fetches live prices for each symbol via the equity-price-fetcher.py in the skill directory, and rewrites the Holdings section with current values (price, RM value, unrealized P/L).
