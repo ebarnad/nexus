@@ -25,7 +25,7 @@ This repository provides a skill-driven personal and work assistant for [Claude 
 | `daily-sync` | Collects your 3 standup answers and posts them to the current team daily thread in Slack. |
 | `task-management` | Task conventions for `TASKS.md` (active, waiting, someday, done) and task update behavior. |
 | `memory-management` | Two-tier memory system: compact `CLAUDE.md` hot cache + detailed `memory/` knowledge base, with explicit `ingest`, `query`, and `lint` workflows. |
-| `journal-sync` | Imports recent Notion Journal entries into monthly `memory/journals/month_YYYY-MM_text.txt` files with incremental sync tracking. |
+| `journal-sync` | Pulls recent Notion Journal entries into monthly files, grouped by year. |
 | `portfolio-update` | Fetches live prices for equities in `memory/projects/investment_portfolio.md`. |
 
 ### External source readers
@@ -118,7 +118,8 @@ If you add or rename agents, restart Pi or start a new session so the `Agent` to
 ├── dashboard.html   # copied to root for browser use
 └── memory/
     ├── glossary.md
-    ├── journals/
+    ├── journals/index.md
+    │   └── YYYY/          ← monthly entries + yearly summary per folder
     ├── people/
     ├── projects/
     ├── context/
@@ -200,7 +201,7 @@ If you add or rename agents, restart Pi or start a new session so the `Agent` to
 4. Verify:
    - `npm run --silent ntn -- api v1/users`
 
-Use `/notion` for general Notion operations. Use `/journal-sync` to import the configured Journal data source into `memory/journals/`.
+Use `/notion` for general Notion operations. Use `/journal-sync` to import the configured Journal data source into `memory/journals/YYYY/month_YYYY-MM_text.txt`. The sync state lives in `memory/journals/index.md`.
 
 ### NotebookLM (via notebooklm-py)
 

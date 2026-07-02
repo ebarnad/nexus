@@ -1,6 +1,6 @@
 ---
 name: journal-sync
-description: "Pull recent Notion Journal entries into memory/journals/month_YYYY-MM_text.txt."
+description: "Pull recent Notion Journal entries into memory/journals/YYYY/month_YYYY-MM_text.txt."
 tools: [Bash]
 ---
 
@@ -12,15 +12,15 @@ Do not ask for confirmation — just execute it.
 
 ## Bootstrap (run once)
 
-If `memory/journals/README.md` doesn't exist or lacks `## Sync Tracking`, create it with this structure so the sync script can track state:
+If `memory/journals/index.md` doesn't exist or lacks `## Sync Tracking`, create it with this structure so the sync script can track state:
 
 ```bash
 python3 - <<'PY'
 from pathlib import Path
-p = Path('memory/journals/README.md')
+p = Path('memory/journals/index.md')
 if not p.exists() or not _has_tracking(p.read_text()):
     config = '\n## Configuration\n\n- **Data Source ID**: `cc42b6a6-bb69-481f-bab9-26b22e4b56bc`'
-    s = '# Journal Archive\n\nMonthly journal extracts exported from Notion for long-range personal and work context.' + config + '\n\n## Sync Tracking\n\n> Update this section after each journal-sync. Latest journal date is the persistent high-water mark; lookback catches recently missed entries.\n\n- **Last sync**: never (first run)\n- **Entries fetched**: 0\n- **Entries added**: 0\n- **Lookback days**: 7\n- **Latest journal date**: null (created_time high-water mark)\n\n## Notes\n\n- Raw monthly files are source material and are intentionally not individually listed in `memory/index.md`.\n- Use yearly summaries first for overview, then inspect monthly extracts when exact chronology or wording matters.'
+    s = '# Journal Archive Index\n\nIndex and sync state for the journal archive. Monthly entries live under `YYYY/` subdirectories; yearly summaries at root level.' + config + '\n\n## Sync Tracking\n\n> Update this section after each journal-sync. Latest journal date is the persistent high-water mark; lookback catches recently missed entries.\n\n- **Last sync**: never (first run)\n- **Entries fetched**: 0\n- **Entries added**: 0\n- **Lookback days**: 7\n- **Latest journal date**: null (created_time high-water mark)\n\n## Notes\n\n- Monthly raw files live in `YYYY/month_YYYY-MM_text.txt` subdirectories; synced automatically by this skill.\n- Use yearly summaries first for overview, then inspect monthly extracts when exact chronology or wording matters.'
     p.write_text(s)
 else:
     s = p.read_text()
@@ -40,7 +40,7 @@ This only runs once. The sync script will then update the tracking state after e
 
 ## Rules
 
-- Incremental state is `Latest journal date` in `memory/journals/README.md`.
+- Incremental state is `Latest journal date` in `memory/journals/index.md`.
 - Query a small lookback window before that date, default **7 days**, so missed recent entries are recovered.
 - Deduplicate by normalized first non-empty markdown line before writing, so minor punctuation/whitespace differences do not duplicate entries.
 - Do not store or use Notion pagination cursors for routine sync.

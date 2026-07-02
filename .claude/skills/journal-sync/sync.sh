@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-README="memory/journals/README.md"
+INDEX="memory/journals/index.md"
 
-# Read config from README.
-DATA_SOURCE_ID=$(sed -n 's/.*Data Source ID[^`]*`\([^`]*\).*/\1/p' "$README")
+# Read config from index.
+DATA_SOURCE_ID=$(sed -n 's/.*Data Source ID[^`]*`\([^`]*\).*/\1/p' "$INDEX")
 if [ -z "$DATA_SOURCE_ID" ]; then
-  echo "ERROR: DATA_SOURCE_ID not found in $README under Configuration section." >&2
+  echo "ERROR: DATA_SOURCE_ID not found in $INDEX under Configuration section." >&2
   exit 1
 fi
 LOOKBACK_DAYS="${JOURNAL_SYNC_LOOKBACK_DAYS:-7}"
 mkdir -p memory/journals
 
 # Read latest tracking state.
-LATEST_DATE=$(perl -ne 'print $1 if /^- \*\*Latest journal date\*\*: ([^ ]+)/' "$README")
+LATEST_DATE=$(perl -ne 'print $1 if /^- \*\*Latest journal date\*\*: ([^ ]+)/' "$INDEX")
 SINCE_DATE=""
 if [ -n "$LATEST_DATE" ] && [ "$LATEST_DATE" != "null" ]; then
   SINCE_DATE=$(python3 - "$LATEST_DATE" "$LOOKBACK_DAYS" <<'PY'
@@ -68,7 +68,8 @@ jq -r '.[].id' /tmp/sorted_entries.json | while IFS= read -r id; do
     continue
   fi
 
-  month_file="memory/journals/month_${date:0:7}_text.txt"
+  month_file="memory/journals/${date:0:4}/month_${date:0:7}_text.txt"
+  mkdir -p "$(dirname "$month_file")"
   if ! raw=$(npm run --silent ntn -- api "v1/pages/${id}/markdown" </dev/null 2>>/tmp/sync_warnings.log); then
     echo "WARNING: Failed markdown fetch for ($id)" >> /tmp/sync_warnings.log
     continue
@@ -121,10 +122,10 @@ if [ "$ENTRY_COUNT" -gt 0 ] && [ -n "$FETCHED_LATEST" ] && [ ! -s /tmp/sync_warn
   NEW_LATEST="$FETCHED_LATEST"
 fi
 
-# Update README tracking state.
+# Update index tracking state.
 python3 - <<PY
 from pathlib import Path
-p = Path('$README')
+p = Path('$INDEX')
 s = p.read_text()
 start = s.index('## Sync Tracking')
 try:
