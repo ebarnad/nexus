@@ -50,4 +50,4 @@ This only runs once. The sync script will then update the tracking state after e
 
 - Default lookback means normal daily runs re-fetch a few recent entries, but dedup skips them.
 - For a larger catch-up, run with `JOURNAL_SYNC_LOOKBACK_DAYS=30` or temporarily lower `Latest journal date`, then sync again.
-- After changes to `memory/`, append `memory/log.md` and run the `memory-backup` skill.
+- After changes to `memory/`, append to `memory/log.md` then trigger `memory-backup`

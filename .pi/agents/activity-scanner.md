@@ -3,7 +3,7 @@ description: General read-only scanner for activity signals
 display_name: Activity Scanner
 tools: read, bash, grep, find
 skills: slack, gmail, google-calendar, google-drive, notion, memory-management, task-management
-thinking: low
+thinking: medium
 max_turns: 25
 ---
 
