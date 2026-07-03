@@ -25,6 +25,7 @@ This repository provides a skill-driven personal and work assistant for [Claude 
 | `daily-sync` | Collects your 3 standup answers and posts them to the current team daily thread in Slack. |
 | `task-management` | Task conventions for `TASKS.md` (active, waiting, someday, done) and task update behavior. |
 | `memory-management` | Two-tier memory system: compact `CLAUDE.md` hot cache + detailed `memory/` knowledge base, with explicit `ingest`, `query`, and `lint` workflows. |
+| `decision-matrix` | Multi-criteria decision analysis with weighted scoring — builds comparison tables from ruminate.io templates or manual input. |
 | `journal-sync` | Pulls recent Notion Journal entries into monthly files, grouped by year. |
 | `portfolio-update` | Fetches live prices for equities in `memory/projects/investment_portfolio.md`. |
 
@@ -94,6 +95,7 @@ If you add or rename agents, restart Pi or start a new session so the `Agent` to
 │       ├── daily-sync/
 │       ├── task-management/
 │       ├── memory-management/
+│       ├── decision-matrix/
 │       ├── memory-backup/
 │       ├── portfolio-update/
 │       ├── journal-sync/
