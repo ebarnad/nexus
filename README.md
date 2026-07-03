@@ -1,6 +1,6 @@
-# Work Assistant 
+# Personal & Work AI Assistant 
 
-This repository provides a skill-driven personal and work assistant for [Claude Code](https://claude.com/product/claude-code) / [Opencode](https://opencode.ai) / [Pi.dev](https://pi.dev) with:
+This repository provides a skill-driven personal and work AI assistant for [Claude Code](https://claude.com/product/claude-code) / [Opencode](https://opencode.ai) / [Pi.dev](https://pi.dev) with:
 
 - `TASKS.md` as the shared task board
 - `CLAUDE.md` as generated working memory (hot cache)
