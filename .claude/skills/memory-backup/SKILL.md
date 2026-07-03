@@ -1,6 +1,6 @@
 ---
 name: memory-backup
-description: Backup changes to CLAUDE.md, TASKS.md, and memory/ to a private Git repo.
+description: Backup CLAUDE.md, TASKS.md, and memory/ to a private Git repo using `bash .claude/skills/memory-backup/backup.sh`.
 ---
 
 # Memory Backup
