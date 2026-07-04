@@ -25,7 +25,13 @@ I'm your Decision Matrix Advisor. To get started, tell me:
 
 Or share a ruminate.io link as a starting point:
 - `https://app.ruminate.io/d/{shortcode}` — existing matrix
+- `https://app.ruminate.io/decisions/{id}` — private decision (requires sharing)
 - `https://app.ruminate.io/templates/{category}/{template-name}` — template base
+
+> **Private URLs** (`/decisions/`): These require authentication. If a private URL is provided:
+> 1. Ask the user to click **Share**, copy the **Link for Sharing** (`https://app.ruminate.io/d/{shortcode}`)
+> 2. Paste that public link back — I'll automatically retry extraction
+> 3. After extraction, remind the user they can disable sharing (revert to private) in their ruminate.io page settings
 ```
 
 ## Flow
@@ -38,7 +44,9 @@ If user provides only context (no URL):
 
 If user provides a ruminate.io link:
 - Run `python3 extract_matrix.py <url>` to fetch and parse the matrix data
+- If the URL is `/decisions/{id}` (private), the script will detect auth requirements and prompt the user to share the matrix publicly
 - Present findings and suggest improvements
+- After successful extraction from a shared link, remind the user they can disable sharing (revert to private) in their ruminate.io page settings
 
 ### 2. Build the Matrix Collaboratively
 

@@ -25,12 +25,37 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
 
-def extract_matrix(html_content: str) -> str:
-    """Parse a ruminate.io HTML page and return formatted Markdown."""
+def extract_matrix(html_content: str, url: str = '') -> str:
+    """Parse a ruminate.io HTML page and return formatted Markdown.
+    
+    Handles /decisions/ URLs that require authentication by detecting
+    auth-required pages and showing instructions to the user.
+    """
     soup = BeautifulSoup(html_content, 'lxml')
 
-    # Extract title from h1
+    # Check if this is an auth-required page (private decision)
+    body_class = soup.find('body').get('class', []) if soup.find('body') else []
     h1 = soup.find('h1', class_='text-2xl')
+    
+    # Detect auth/login required state by looking for common login page patterns
+    is_auth_required = (
+        any(tag.name == 'form' and tag.get('action', '').endswith('log_in') for tag in soup.find_all()) or
+        any(h.get_text(strip=True) in ('Sign in to your account', 'Please sign in') 
+            for h in soup.find_all('h2')) or
+        any('register for a free account' in a.get_text() 
+            for a in soup.find_all('a'))
+    )
+    
+    if is_auth_required:
+        # Extract title from URL slug for error message
+        decision_id = url.rstrip('/').split('/')[-1] if '/' in url else 'unknown'
+        return f"""⚠️ **This matrix requires authentication.**
+
+Please paste the **Link for Sharing** (public URL: `https://app.ruminate.io/d/{{shortcode}}`) so I can re-extract it.
+
+You can find this by clicking **Share** on your ruminate.io page and copying the public link."""
+
+    # Extract title from h1
     title = h1.get_text(strip=True) if h1 else "Decision Matrix"
 
     # Find the decision matrix table
@@ -101,11 +126,13 @@ def main():
     input_arg = sys.argv[1]
     if input_arg == '-':
         html_content = sys.stdin.read()
+        url = ''  # No URL available when piping from stdin
     else:
         resp = urlopen(input_arg, timeout=30)
         html_content = resp.read().decode('utf-8')
+        url = input_arg
 
-    result = extract_matrix(html_content)
+    result = extract_matrix(html_content, url=input_arg)
     print(result)
 
 
